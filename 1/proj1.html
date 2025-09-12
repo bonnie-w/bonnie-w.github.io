@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title> Project 1: Images of the Russian Empire </title>
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <a href="../index.html" class="back-button"> Back to Home </a>
+    <h1> Project 1: Images of the Russian Empire </h1>
+    <h2> Overview </h2>
+    <div class="image-row">
+        <p>
+            This project uses computer vision techniques to colorize early Prokudin-Gorskii glass plate photographs.
+            The photographs are stored as three vertically stacked grayscale images that correspond to blue, green, 
+            and red channels, and in the project I separated the images by their channels and aligned them, 
+            then stacked it back into a single RGB image so it became colored. In this project, I learned about image 
+            pyramid techniques and it was very intriguing to see how three seemingly monochrome images could become colored, 
+            which brings historical photographs to life and makes the past seem not so distant.
+        </p>
+    </div>
+
+    <h2> Part 1: Naive Approach: Iterative </h2>
+    <div class="image-row">
+        <p>
+            The initial approach I took was to simply read each image, convert it into a double, split the image into 
+            three equal sections. I tried both the L2 norm and normalized cross-correlation (NCC) similarity metric 
+            to align the three images by tracking the lowest L2 score or highest NCC score. For smaller images, the 
+            results of using L2 Norm versus NCC were similar, so I chose to use NCC.
+        </p>  
+
+        <p> I implemented a basic exhaustive search that uses a double for loop with a window range of [-15, 15] to 
+            search over every pixel shift in the x and y directions to find the best alignment. Running the algorithm, 
+            the images were colored but not completely aligned. Thus, I added cropping that removes 10% of the image border. 
+            I tried two different cropping approaches within the basic align algorithm – cropping both the original reference 
+            and aligning images before shifting and cropping the aligning image individually within each shift. The latter 
+            approach produced a better alignment, thus I kept that approach. The exhaustive search works well for smaller jpg 
+            images, as shown below!
+        </p>
+
+        <div class="image-row" style="display: flex; justify-content: center; gap: 20px;">
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/colored_cathedral.jpg" alt="Cathedral" style="width: 250px; height: auto;" />
+                <figcaption>Cathedral</figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/colored_monastery.jpg" alt="Monastery" style="width: 250px; height: auto;" />
+                <figcaption>Monastery</figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/colored_tobolsk.jpg" alt="Tobolsk" style="width: 250px; height: auto;" />
+                <figcaption>Tobolsk</figcaption>
+            </figure>
+        </div>
+
+        <p>
+            However, this basic alignment algorithm takes a long time to run when images are large such as 
+            ‘.tif’, and it results in slight misalignments most of the time. This is the ‘church.tif’ 
+            image when I ran it using the iterative align algorithm:
+        </p>
+        <figure>
+            <img src="./media/church_tif_bruteforce.png" alt="church.tif with naive approach" style="width: 300px; height: auto;" />
+            <figcaption>Church.tif (Naive Approach)</figcaption>
+        </figure>
+    </div>
+
+    <h2> Part 2: Improved Approach: Image Pyramid </h2>
+    <div class="image-row">
+        <p>
+            Therefore, I took an alternative approach, using an image pyramid, which builds upon my basic alignment algorithm. 
+            I recursively downsampled both the reference and alignment images by a factor of two for 4 levels until they were 
+            small enough for an exhaustive search. At the smallest (coarsest) image size, I run the iterative algorithm using NCC 
+            to find the best shifts with the same window size of 15. This coarse shift estimate was then upscaled by a factor of 
+            two as we moved back up the pyramid. At each finer level, I refined the alignment by searching within a smaller 
+            window of 5.
+        </p>
+        <p>
+            Some choices I made were deciding which similarity metric to use, the crop amount, window size, and 
+            number of levels for my image pyramid. I experimented with both L2 norm and NCC. Initially, I chose to use L2 as it 
+            ran faster than NCC, but the output images were very misaligned. I tried to improve the alignment by adding mean 
+            normalization when calculating the distance. However, there was still some misalignment. The NCC performance was much 
+            better despite the running time being longer, so I decided to move forward by using NCC, and was able to increase 
+            the speed significantly by reducing the number of levels and the window size.
+        </p>
+        <p>
+            The image pyramid approach led to all images except ‘emir.tif’ aligning. It likely failed due to the glass plate 
+            channels having color contrast differences that interfered with the similarity measurements when I simply used 
+            raw pixels. A better approach would be to use edge detection. I was unable to implement it due to time constraints, 
+            but that is something I will explore further in the future. Below is the algorithm run on all the images provided, 
+            and some images of my choosing!
+        </p>
+    </div>
+
+    <h2> Gallery </h2>
+    <h3> Small Images </h3>
+    <div class='image-row'> 
+        <figure>
+            <img src="./media/colored_tobolsk.jpg" alt="Tobolsk" />
+            <figcaption>
+                <h4 style="margin: 0;"> Italil </h4>
+                Green: (3, 3) Red: (6, 3)
+            </figcaption>
+        </figure>
+
+        <figure>
+            <img src="./media/colored_monastery.jpg" alt="Monastery" />
+            <figcaption>
+                <h4 style="margin: 0;"> Italil </h4>
+                Green: (38, 21) Red: (76, 35)
+            </figcaption>
+        </figure>
+
+        <figure>
+            <img src="./media/colored_cathedral.jpg" alt="Cathedral" />
+            <figcaption>
+                <h4 style="margin: 0;"> Cathedral </h4>
+                Green: (5, 2) Red: (12, 3)
+            </figcaption>
+        </figure>
+    </div>
+    <h3> Large Images </h3>
+    <div class="image-row">
+        <figure>
+            <img src="./media/colored_italil.jpg" alt="Italil" />
+            <figcaption>
+                <h4 style="margin: 0;"> Italil </h4>
+                Green: (38, 21) Red: (76, 35)
+            </figcaption>
+        </figure>
+
+         <figure>
+            <img src="./media/colored_church.jpg" alt="Church" />
+            <figcaption>
+                <h4 style="margin: 0;"> Church </h4>
+                Green: (25, 4) Red: (58, -4)
+            </figcaption>
+        </figure>
+
+         <figure>
+            <img src="./media/colored_three_generations.jpg" alt="Three Generations" />
+            <figcaption>
+                <h4 style="margin: 0;"> Three Generations </h4>
+                Green: (53, 14) Red: (112, 11)
+            </figcaption>
+        </figure>
+
+         <figure>
+            <img src="./media/colored_lugano.jpg" alt="Lugano" />
+            <figcaption>
+                <h4 style="margin: 0;"> Lugano </h4>
+                Green: (41, -16) Red: (93, -29)
+            </figcaption>
+        </figure>
+
+         <figure>
+            <img src="./media/colored_melons.jpg" alt="Melons" />
+            <figcaption>
+                <h4 style="margin: 0;"> Melons </h4>
+                Green: (82, 11) Red: (178, 13)
+            </figcaption>
+        </figure>
+
+         <figure>
+            <img src="./media/colored_lastochikino.jpg" alt="Lastochikino" />
+            <figcaption>
+                <h4 style="margin: 0;"> Lastochikino </h4>
+                Green: (-3, -2) Red: (75, -9)
+            </figcaption>
+        </figure>
+
+         <figure>
+            <img src="./media/colored_icon.jpg" alt="Icon" />
+            <figcaption>
+                <h4 style="margin: 0;"> Icon </h4>
+                Green: (41, 17) Red: (89, 23)
+            </figcaption>
+        </figure>
+
+        <figure>
+            <img src="./media/colored_emir.jpg" alt="Emir" />
+            <figcaption>
+                <h4 style="margin: 0;"> Emir </h4>
+                Green: (49, 24) Red: (155, -1047)
+            </figcaption>
+        </figure>
+
+         <figure>
+            <img src="./media/colored_siren.jpg" alt="Siren" />
+            <figcaption>
+                <h4 style="margin: 0;"> Siren </h4>
+                Green: (49, -6) Red: (96, -25)
+            </figcaption>
+        </figure>
+
+         <figure>
+            <img src="./media/colored_self_portrait.jpg" alt="Self Portrait" />
+            <figcaption>
+                <h4 style="margin: 0;"> Self Portrait </h4>
+                Green: (79, 29) Red: (176, 37)
+            </figcaption>
+        </figure>
+
+         <figure>
+            <img src="./media/colored_harvesters.jpg" alt="Harvesters" />
+            <figcaption>
+                <h4 style="margin: 0;"> Harvesters </h4>
+                Green: (60, 17) Red: (124, 13)
+            </figcaption>
+        </figure>
+    </div>
+    <h3> Custom Images </h3>
+    <div class="image-row">
+        <figure>
+            <img src="./media/colored_custom_forest.jpg" alt="Forest" />
+            <figcaption>
+                <h4 style="margin: 0;"> Forest </h4>
+                Green: (37, -32) Red: (97, 7)
+            </figcaption>
+        </figure>
+
+        <figure>
+            <img src="./media/colored_custom_family.jpg" alt="Family" />
+            <figcaption>
+                <h4 style="margin: 0;"> Family </h4>
+                Green: (68, 2) Red: (145, -5)
+            </figcaption>
+        </figure>
+
+        <figure>
+            <img src="./media/colored_custom_flower.jpg" alt="Flower" />
+            <figcaption>
+                <h4 style="margin: 0;"> Flower </h4>
+                Green: (8, 8) Red: (60, 13)
+            </figcaption>
+        </figure>
+
+        <figure>
+            <img src="./media/colored_custom_hotel.jpg" alt="Hotel" />
+            <figcaption>
+                <h4 style="margin: 0;"> Hotel </h4>
+                Green: (37, 13) Red: (86, 38)
+            </figcaption>
+        </figure>
+    </div>
+</body>
+</html>
