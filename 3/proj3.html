@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title> Project 3: [Auto]Stitching Photo Mosaics </title>
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <a href="../index.html" class="back-button"> Back to Home </a>
+    <h1> Project 3: [Auto]Stitching Photo Mosaics </h1>
+    <h2> Part A: IMAGE WARPING and MOSAICING </h2>
+    <h3> A.1 Shoot the Pictures </h3>   
+    <div>
+        <p>
+            I took sets of two photos outside of Brown’s Cafe and of a street in Berkeley! I maintained the Center of Projection by holding the 
+            camera as still as possible and pivoting only slightly while having the lens at the same location.
+        </p>  
+
+        <!-- <h4> Set 1: Brown's Cafe </h4> -->
+        <div class="image-row" style="display: flex; justify-content: center; gap: 20px;">
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/browns_left.jpg" style="width: 400px; height: auto;" />
+                <figcaption> Brown's Cafe (Left View) </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/browns_right.jpg" style="width: 400px; height: auto;" />
+                <figcaption> Brown's Cafe (Right View) </figcaption>
+            </figure>
+        </div>
+
+        <!-- <h4> Set 2: Berkeley Street </h4> -->
+        <div class="image-row" style="display: flex; justify-content: center; gap: 20px;">
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/street_left.jpg" style="width: 400px; height: auto;" />
+                <figcaption> Street (Left View) </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/street_right.jpg" style="width: 400px; height: auto;" />
+                <figcaption> Street (Right View) </figcaption>
+            </figure>
+        </div>
+    </div> 
+
+    <h3> A.2: Recover Homographies </h3>
+    <div>
+        <p> Through setting up a system of equations and a series of simplification, I transformed the relationship of p=Hp’ into the linear system: </p>
+        <div style="text-align: center;"><img src="./media/eq1.png" style="width: auto; height: 50px;" /></div>
+        <p>
+            Each known correspondence (x,y) → (u,v) is substituted into the below equations, which can then be used to solve for the Homography matrix H:
+        </p>
+        <div style="text-align: center;"><img src="./media/eq2.png" style="width: auto; height: 250px;" /></div>
+
+        <h4> Brown's Cafe Correspondences (11 points): </h4>
+        <div class="image-row" style="display: flex; justify-content: center; gap: 20px;">
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/browns_left2_labelled.jpg" style="width: 400px; height: auto;" />
+                <figcaption> Brown's Cafe Left View Correspondence </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/browns_right2_labelled.jpg" style="width: 400px; height: auto;" />
+                <figcaption> Brown's Cafe Right View Correspondence </figcaption>
+            </figure>
+        </div>
+        <div class="image-row" style="display: flex; justify-content: center; gap: 20px;">
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/A_matrix.png" style="width: 400px; height: auto;" />
+                <figcaption> Brown's Cafe (A) </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/b_matrix.png" style="width: auto; height: 180px;" />
+                <figcaption> Brown's Cafe (b) </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/H_matrix.png" style="width: 400px; height: auto;" />
+                <figcaption> Brown's Cafe (H) </figcaption>
+            </figure>
+        </div>
+
+        <h4> Street Correspondences (10 points): </h4>
+        <div class="image-row" style="display: flex; justify-content: center; gap: 20px;">
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/street_left_labeled.jpg" style="width: 400px; height: auto;" />
+                <figcaption> Street Left View Correspondence </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/street_right_labeled.jpg" style="width: 400px; height: auto;" />
+                <figcaption> Street Right View Correspondence </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/street_H_matrix.png" style="width: 400px; height: auto;" />
+                <figcaption> Street (H) </figcaption>
+            </figure>
+        </div>
+    </div>
+
+    <h3> A.3: Warp the Images </h3>
+    <p>
+        I implemented two warping functions that both use inverse warping with interpolation of Nearest Neighbor (NN) and Bilinear, respectively. 
+        For each function, the output pixel coordinates in the warped image are mapped back to the original image using inverse homography. We use 
+        inverse warping as it ensures that every pixel in the output has a valid value and this avoids holes in the warped image. In the NN 
+        interpolation, I round the output coordinates to the nearest integer coordinate in the input image. In Bilinear interpolation, I take the 
+        four surrounding pixels and find the weighted average based on the relative distance from each coordinate. 
+    </p>
+    <p>
+        At first glance of the output images, there doesn’t seem to be a huge difference in the quality, and NN interpolation is actually faster than 
+        bilinear interpolation. It took 11.06s vs 18.67s to warp the art image and 1.03s vs 1.56s to warp the movie posters image using NN and 
+        bilinear, respectively. However, as I enlarged the image, I noticed that the image quality produced by NN is more pixelated whereas it is 
+        much smoother when using bilinear interpolation.
+    </p>
+    <div>
+        <div class="image-row" style="display: flex; justify-content: center; gap: 20px;">
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/art.jpg" style="width: 260px; height: auto;" />
+                <figcaption> Art </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/rectified_art_nn.jpg" style="width: 200px; height: auto;" />
+                <figcaption> Art Rectified (NN) 11.06s </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/rectified_art_bilinear.jpg" style="width: 200px; height: auto;" />
+                <figcaption> Art Rectified (Bilinear) 18.67s </figcaption>
+            </figure>
+        </div>
+
+        <div class="image-row" style="display: flex; justify-content: center; gap: 20px;">
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/movies.jpg" style="width: 290px; height: auto;" />
+                <figcaption> Movie Posters </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/movies2.jpg" style="width: 350px; height: auto;" />
+                <figcaption> Movie Posters Cropped </figcaption>
+            </figure>
+        </div> 
+        <div class="image-row" style="display: flex; justify-content: center; gap: 20px;">
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/rectified_movie_nn.jpg" style="width: 360px; height: auto;" />
+                <figcaption> Movie Posters Rectified (NN) 1.03s </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/rectified_movie_bilinear.jpg" style="width: 360px; height: auto;" />
+                <figcaption> Movie Posters Rectified (Bilinear) 1.56s </figcaption>
+            </figure>
+        </div>
+    </div>
+
+    <h3> A.4: Blend the Images into a Mosaic </h3>
+    <div>
+        <p>
+            I created the mosaic image by first finding what the overall output dimensions should be that could contain both images after they are 
+            warped. I did this by implementing a bounding box for the mosaic that takes the corners of each input image, applies the corresponding 
+            homography, then finds the min and max coordinates across all the warped corners for all warped images. 
+        </p>
+        <p>
+            Then, I wrote a function to warp each image into the mosaic coordinate system. For each image, I applied an inverse warping similar to 
+            the previous rectification section. I chose to use the bilinear interpolation approach as we saw it led to smoother output images in the 
+            previous part. I also created an alpha mask for each image based on the distance of the pixel from the image edges where higher weights 
+            are assigned to pixels in the center of the image and lower weights to pixels near the edges of the image. This helped reduce visible 
+            edges of the overlapping sections when I blended the images.
+        </p>
+        <p>
+            Finally, to put the mosaic together, I combined the warped images through a function that blends the images. It finds the weighted 
+            average of overlapping pixels based on the alpha masks. The final mosaic shows the images blended together relatively well. There is 
+            some slight blurriness, but I believe it is due to my hand being a little shaky while taking the images causing the Center of Projection 
+            to be slightly off and the slight inaccuracies of manually clicking the correspondences.
+        </p>
+
+        <h4> Brown's Cafe Mosaic </h4>
+        <div class="image-row" style="display: flex; justify-content: center; gap: 20px;">
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/browns_left.jpg" style="width: 400px; height: auto;" />
+                <figcaption> Brown's Cafe (Left View) </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/browns_right.jpg" style="width: 400px; height: auto;" />
+                <figcaption> Brown's Cafe (Right View) </figcaption>
+            </figure>
+            <p>
+                I attempted to create the mosaic using an initial set of 5 correspondences I had found. However, the mosaic created was very blurry, 
+                especially where the two images overlapped. 
+            </p>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/stitched_browns_correspondance1.jpg" style="width: 650px; height: auto;" />
+                <figcaption> Brown's Cafe Mosaic (Attempt 1) </figcaption>
+            </figure>
+        </div>
+        <p>
+            I initially thought it was due to an error in my implementation. 
+            However, I realized that it was due to my image overlap area being large and I did not select a large enough and good enough list of 
+            correspondences. The correspondences were at sharp identifiable edges but they mostly clustered together towards the connecting edge and 
+            top of the images. Thus, I went back to select new correspondences that were more spread out and the result was much less blurry:
+        </p>
+        <div class="image-row" style="display: flex; justify-content: center; gap: 20px;">
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/stitched_browns_correspondance2.jpg" style="width: 650px; height: auto;" />
+                <figcaption> Brown's Cafe Mosaic (Attempt 2) </figcaption>
+            </figure>
+        </div>
+
+        <h4> Street Mosaic </h4>
+        <div class="image-row" style="display: flex; justify-content: center; gap: 20px;">
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/street_left.jpg" style="width: 400px; height: auto;" />
+                <figcaption> Street (Left View) </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/street_right.jpg" style="width: 400px; height: auto;" />
+                <figcaption> Street (Right View) </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/stitched_street_correspondance.jpg" style="width: 600px; height: auto;" />
+                <figcaption> Street Mosaic </figcaption>
+            </figure>
+        </div>
+
+        <h4> Normandy Village Mosaic </h4>
+        <div class="image-row" style="display: flex; justify-content: center; gap: 20px;">
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/normandy2_left.jpg" style="width: 400px; height: auto;" />
+                <figcaption> Normandy Village (Left View) </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/normandy2_right.jpg" style="width: 400px; height: auto;" />
+                <figcaption> Normandy Village (Right View) </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/stitched_normandy_correspondance.jpg" style="width: 650px; height: auto;" />
+                <figcaption> Normandy Village Mosaic </figcaption>
+            </figure>
+        </div>
+    </div>
+</body>
+</html>
