@@ -229,5 +229,121 @@
             </figure>
         </div>
     </div>
+
+    <h2> Part B: FEATURE MATCHING for AUTOSTITCHING </h2>
+    <p>
+        In this part, I implement autostitching by following a simplified approach based on this paper: “Multi-Image Matching using Multi-Scale Oriented Patches”.
+    </p>
+    <h3> B.1: Harris Corner Detection </h3>   
+    <div>
+        <p>
+            First, I ran a Harris Interest Point Detector algorithm on the same images I took in part A, which gave 18000+ points of interest per image. 
+            To reduce this large number to a smaller fixed amount, I also implemented the Adaptive Non-Maximal Suppression (ANMS) to be used with the starter 
+            Harris corner detector algorithm. In ANMS, each detected point is compared to all others and out of all stronger points found, the min distance 
+            point is the suppression radius for that point. I sort all the points by suppression radius by descending order and only keep the top specified 
+            number of points. Based on parameters in the paper, I used a c_robust value of 0.9 to scale the corner strength and took the top 500 corners. 
+        </p>
+        <p>
+            Below are the images visualized with their points of interest when running the Harris interest point detector algorithm without and with ANMS:
+        </p>
+        <div class="image-row" style="display: flex; justify-content: center; gap: 20px;">
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/brownsL_harris.png" style="width: 400px; height: auto;" />
+                <figcaption> Brown's Cafe Left View Harris Corner Detection (No ANMS) </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/brownsL_harris_ANMS.png" style="width: 400px; height: auto;" />
+                <figcaption> Brown's Cafe Left View Harris Corner Detection (ANMS) </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/brownsR_harris.png" style="width: 400px; height: auto;" />
+                <figcaption> Brown's Cafe Right View Harris Corner Detection (No ANMS) </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/brownsR_harris_ANMS.png" style="width: 400px; height: auto;" />
+                <figcaption> Brown's Cafe Right View Harris Corner Detection (ANMS) </figcaption>
+            </figure>
+        </div>
+    </div>
+
+    <h3> B.2: Feature Descriptor Extraction </h3>
+    <div>
+        <p>
+            After obtaining the interest points from the Harris corner detector and ANMS, I extracted normalized 8x8 feature descriptors around each selected point. 
+            I first applied a Gaussian filter of kernel size 5x5 to blur the image. Then, for each interest point, I extracted a 40x40 patch centered around that point 
+            and took an 8x8 patch out of it by taking every 5 pixels. The sample patch was normalized and flattened to be the final descriptors used for matching. 
+            Below are visualizations of the feature descriptors.
+        </p>
+        <div class="image-row" style="display: flex; justify-content: center; gap: 20px;">
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/brownsL_feature_descriptors.png" style="width: 800px; height: auto;" />
+                <figcaption> Feature Descriptors of Brown's Cafe Left View </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/brownsR_feature_descriptors.png" style="width: 800px; height: auto;" />
+                <figcaption> Feature Descriptors of Brown's Cafe Right View </figcaption>
+            </figure>
+        </div>
+    </div>
+
+    <h3> B.3: Feature Matching </h3>
+    <div>
+        <p>
+            To find the correspondences, I implemented feature matching where I found feature descriptors that are very similar which meant they were likely representing 
+            the same point in both images. I found the Euclidean distance between every pair of feature descriptors in the two images, applied a threshold to the ratio of 
+            nn1/nn2 to be >0.7, and identified the top 2 nearest neighbors by similarity. Then, I applied a ratio test to filter out ambiguous matches. Below is a 
+            visualization of the matching features across the two images.
+        </p>
+        <div class="image-row" style="display: flex; justify-content: center; gap: 20px;">
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/browns_feature_match.png" style="width: 800px; height: auto;" />
+                <figcaption> Matching Features of Brown's Cafe </figcaption>
+            </figure>
+        </div>
+    </div>
+
+    <h3> B.4: RANSAC for Robust Homography </h3>
+    <div>
+        <p>
+            To find the best homography, I implemented a 4-point RANSAC algorithm. I used 1000 iterations with a threshold of 5. In each iteration, 4 points are randomly chosen 
+            from the matching coordinates. We find the homography using those points and transform the image using this homography. The error was calculated by subtracting the 
+            transformation image from the actual image and only inliers less than the threshold were kept. The model with the highest number of inliers from all iterations were 
+            selected and we recalculate the homography matrix using all inlier points.
+        </p>
+        <p>
+            Below are side-by-side comparisons of all images manually stitched vs autostitched. I noticed that the autostitched images had much better alignment for corresponding 
+            points and reduced blur in the stitched image.
+        </p>
+        <div class="image-row" style="display: flex; justify-content: center; gap: 20px;">
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/stitched_browns_correspondance2.jpg" style="width: 400px; height: auto;" />
+                <figcaption> Brown's Cafe Manually Stitched </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/autostitched_browns.jpg" style="width: 400px; height: auto;" />
+                <figcaption> Brown's Cafe Autostitched </figcaption>
+            </figure>
+            <p>
+                In the street image, I was actually surprised that my manual stitching performed a little better than the autostitching in the details of the trees. Perhaps this 
+                is due to the tree details being hard to identify while in auto stitching I was able to pinpoint exact details visually and match them across the images.
+            </p>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/stitched_street_correspondance.jpg" style="width: 400px; height: auto;" />
+                <figcaption> Street Manually Stitched </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/autostitched_street.jpg" style="width: 400px; height: auto;" />
+                <figcaption> Street Autostitched </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/stitched_normandy_correspondance.jpg" style="width: 400px; height: auto;" />
+                <figcaption> Normandy Village Manually Stitched </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/autostitched_normandy.jpg" style="width: 400px; height: auto;" />
+                <figcaption> Normandy Village Autostitched </figcaption>
+            </figure>
+        </div>
+    </div>
 </body>
 </html>
