@@ -395,49 +395,52 @@
                 <img src="./media/train1_comparison_8000.png" style="width: 500px; height: auto;" />
                 <figcaption> 8000 Iterations Output Comparison </figcaption>
             </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/2.6_8000_train2_rotx.gif" style="width: 200px; height: auto;" />
+                <figcaption> Best GIF I got out of the 8000 Iterations (x-axis) </figcaption>
+            </figure>
         </div>
         <p>
-            Below shows the training progression as well as the training PSNR and training loss for 8000 iterations. 
+            As results weren't ideal, I went back and cropped all the training images so they were closer on the object and the tag.
+            The results actually shockingly became way better - even after just 2000 iterations of training.
+            Although the PSNR value staggered at 17 after ~1000 epochs, the novel view point actually looked better.
+            Below shows the training progression as well as the training PSNR and training loss for my final output using 2000 iterations and the same hyperparameters specificed above. 
         </p>
         <div class="image-row" style="display: flex; justify-content: center; gap: 20px;">
             <figure style="flex: 0 0 auto; text-align: center;">
-                <img src="./media/200.jpg" style="width: 200px; height: auto;" />
+                <img src="./media/0.jpg" style="width: 200px; height: auto;" />
+                <figcaption> Iteration 0 </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/200_new.jpg" style="width: 200px; height: auto;" />
                 <figcaption> Iteration 200 </figcaption>
             </figure>
             <figure style="flex: 0 0 auto; text-align: center;">
-                <img src="./media/400.jpg" style="width: 200px; height: auto;" />
-                <figcaption> Iteration 400 </figcaption>
+                <img src="./media/600_new.jpg" style="width: 200px; height: auto;" />
+                <figcaption> Iteration 600 </figcaption>
             </figure>
             <figure style="flex: 0 0 auto; text-align: center;">
-                <img src="./media/800.jpg" style="width: 200px; height: auto;" />
-                <figcaption> Iteration 800 </figcaption>
+                <img src="./media/1000_new.jpg" style="width: 200px; height: auto;" />
+                <figcaption> Iteration 1000 </figcaption>
             </figure>
             <figure style="flex: 0 0 auto; text-align: center;">
-                <img src="./media/1200.jpg" style="width: 200px; height: auto;" />
-                <figcaption> Iteration 1200 </figcaption>
+                <img src="./media/1400_new.jpg" style="width: 200px; height: auto;" />
+                <figcaption> Iteration 1400 </figcaption>
             </figure>
             <figure style="flex: 0 0 auto; text-align: center;">
-                <img src="./media/1600.jpg" style="width: 200px; height: auto;" />
-                <figcaption> Iteration 1600 </figcaption>
+                <img src="./media/1800_new.jpg" style="width: 200px; height: auto;" />
+                <figcaption> Iteration 1800 </figcaption>
             </figure>
             <figure style="flex: 0 0 auto; text-align: center;">
-                <img src="./media/2000.jpg" style="width: 200px; height: auto;" />
+                <img src="./media/2000_new.jpg" style="width: 200px; height: auto;" />
                 <figcaption> Iteration 2000 </figcaption>
             </figure>
             <figure style="flex: 0 0 auto; text-align: center;">
-                <img src="./media/2200.jpg" style="width: 200px; height: auto;" />
-                <figcaption> Iteration 2200 </figcaption>
-            </figure>
-            <figure style="flex: 0 0 auto; text-align: center;">
-                <img src="./media/2400.jpg" style="width: 200px; height: auto;" />
-                <figcaption> Iteration 2400 </figcaption>
-            </figure>
-            <figure style="flex: 0 0 auto; text-align: center;">
-                <img src="./media/2.6_training_psnr.png" style="width: 400px; height: auto;" />
+                <img src="./media/2.6_new_training_psnr.png" style="width: 400px; height: auto;" />
                 <figcaption> Training PSNR </figcaption>
             </figure>
             <figure style="flex: 0 0 auto; text-align: center;">
-                <img src="./media/2.6_training_loss.png" style="width: 400px; height: auto;" />
+                <img src="./media/2.6_new_training_loss.png" style="width: 400px; height: auto;" />
                 <figcaption> Training Loss </figcaption>
             </figure>
         </div>
@@ -446,12 +449,12 @@
         </p>
         <div class="image-row" style="display: flex; justify-content: center; gap: 20px;">
             <figure style="flex: 0 0 auto; text-align: center;">
-                <img src="./media/2.6_8000_train2_rotx.gif" style="width: 300px; height: auto;" />
-                <figcaption> 8000 Iterations Rotation (x-axis) </figcaption>
+                <img src="./media/2.6_cropped_test_rotx.gif" style="width: 300px; height: auto;" />
+                <figcaption> 2000 Iterations Rotation (x-axis) </figcaption>
             </figure>
             <figure style="flex: 0 0 auto; text-align: center;">
-                <img src="./media/2.6_8000_train2_roty.gif" style="width: 300px; height: auto;" />
-                <figcaption> 8000 Iterations Rotation (y-axis) </figcaption>
+                <img src="./media/2.6_cropped_test_rotz.gif" style="width: 300px; height: auto;" />
+                <figcaption> 8000 Iterations Rotation (z-axis) </figcaption>
             </figure>
         </div>
         <p>
