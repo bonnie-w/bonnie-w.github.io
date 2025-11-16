@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title> Project 4: Neural Radiance Field! </title>
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <a href="../index.html" class="back-button"> Back to Home </a>
+    <h1> Project 4: Neural Radiance Field! </h1>
+    <h2> Part 0: Calibrating Your Camera and Capturing a 3D Scan </h2>
+    <h3> Part 0.1: Calibrating Your Camera </h3>   
+    <div>
+        <p>
+            In this part, I printed out the calibration tags and took 45 images of the tags from different angles and distances to calibrate the camera. Here are some examples of the types of images I took:
+        </p>  
+
+        <div class="image-row" style="display: flex; justify-content: center; gap: 20px;">
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/calibration1.jpeg" style="width: 200px; height: auto;" />
+                <figcaption> Calibration Image 1 </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/calibration2.jpeg" style="width: 200px; height: auto;" />
+                <figcaption> Calibration Image 2 </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/calibration3.jpeg" style="width: 200px; height: auto;" />
+                <figcaption> Calibration Image 3 </figcaption>
+            </figure>
+        </div>
+    </div> 
+
+    <h3> Part 0.2: Capturing a 3D Object Scan </h3>
+    <div>
+        <p> Then, I printed out a single 4x4 ArUco tag and placed a ceramic pot next to it. Using the same camera as calibration.
+            Initially, I captured 45 images of my ceramic pot but upon reaching 2.6, the training results were not ideal.
+            Thus, I went back and recaptured 66 new images at closer distances and various angles. </p>
+        <p>
+            Below are some images I took of my ceramic pot with the tag:
+        </p>
+        <div class="image-row" style="display: flex; justify-content: center; gap: 20px;">
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/pot1.jpeg" style="width: 200px; height: auto;" />
+                <figcaption> Ceramic Pot Angle 1 </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/pot2.jpeg" style="width: 200px; height: auto;" />
+                <figcaption> Ceramic Pot Angle 2 </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/pot3.jpeg" style="width: 200px; height: auto;" />
+                <figcaption> Ceramic Pot Angle 3 </figcaption>
+            </figure>
+        </div>
+    </div>
+
+    <h3> Part 0.3: Estimating Camera Pose </h3>
+    <p>
+        For each of the images I captured, I detected the tag within the image and estimated each of their camera poses (position 
+        and orientation). This was visualized using Viser. As seen in the image below, the images form a little dome shape, which 
+        is as expected as I took images around the sides and top of the object.
+    </p>
+    <div>
+        <div class="image-row" style="display: flex; justify-content: center; gap: 20px;">
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/0.3_img1.png" style="width: 260px; height: auto;" />
+                <figcaption> Camera Pose Angle 1 </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/0.3_img2.png" style="width: 200px; height: auto;" />
+                <figcaption> Camera Pose Angle 2 </figcaption>
+            </figure>
+        </div>
+    </div>
+
+    <h3> Part 0.4: Undistorting images and creating a dataset </h3>
+    <div>
+        <p>
+            In this part, I undistorted the images using the distortion coefficients, shuffled the image and camera-to-world transformation 
+            matrices datasets and they split the images up with 90% as training images and 10% as validation images and 1 c2w as the test 
+            angle (that will get expanded in a circular view point later on).
+        </p>
+        <p>
+            Note: I actually came back later on when working on part 2.6 to remove the undisortion as I noticed that the undistortion 
+            made the performance of my training worse.
+        </p>
+    </div>
+
+    <h2> Part 1: Fit a Neural Field to a 2D Image </h2>
+    <div>
+        <p>
+            We first fit a neural field model to a 2D image. I created a MLP network with Sinusoidal Positional Encoding. The input is the 
+            2D pixel coordinates, and we want it to predict the  pixel colors (R, G, B).
+        </p>
+        <div class="image-row" style="display: flex; justify-content: center; gap: 20px;">
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/mlp1_img.jpg" style="width: 400px; height: auto;" />
+                <figcaption> 2D Image Neural Field MLP </figcaption>
+            </figure>
+        </div>
+
+        <p>
+            The image architecture I used is as follows:
+            <ul>
+                <li> 3 linear hidden layers with ReLU activation for the hidden layers and a sigmoid output activation </li>
+                <li> Hidden layer width of 256 </li>
+                <li> Adam optimizer with learning rate of 1e-2 </li>
+                <li> Trained for 3000 iterations </li>
+            </ul>
+        </p>
+
+        <p> Below shows the progression of training for the fox image: </p>
+        <div class="image-row" style="display: flex; justify-content: center; gap: 20px;">
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/fox-0.png" style="width: 200px; height: auto;" />
+                <figcaption> Iteration 0 </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/fox-200.png" style="width: 200px; height: auto;" />
+                <figcaption> Iteration 200 </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/fox-400.png" style="width: 200px; height: auto;" />
+                <figcaption> Iteration 400 </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/fox-600.png" style="width: 200px; height: auto;" />
+                <figcaption> Iteration 600 </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/fox-1000.png" style="width: 200px; height: auto;" />
+                <figcaption> Iteration 1000 </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/fox-1400.png" style="width: 200px; height: auto;" />
+                <figcaption> Iteration 1400 </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/fox-2200.png" style="width: 200px; height: auto;" />
+                <figcaption> Iteration 2200 </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/fox-2999.png" style="width: 200px; height: auto;" />
+                <figcaption> Iteration 2999 </figcaption>
+            </figure>
+        </div>
+
+        <p> And the corresponding training PSNR curve for the fox image: </p>
+        <figure style="flex: 0 0 auto; text-align: center;">
+            <img src="./media/Fox_PSNR.png" style="width: 500px; height: auto;" />
+            <figcaption> Fox Training PSNR </figcaption>
+        </figure>
+        
+        <p>
+            I tested various hyperparameters as shown below and noticed that when L is smaller, there is less 
+            structure - the fox seems more blurred together like a blob. When the width of hidden layers is smaller, 
+            though the fox is clear, there is less detail within the fox. 
+        </p>
+        <div class="image-row" style="display: flex; justify-content: center; gap: 20px;">
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/fox-hidden256-L2.png" style="width: 400px; height: auto;" />
+                <figcaption> Hidden layer width=256, L=2</figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/fox-hidden256-L5.png" style="width: 400px; height: auto;" />
+                <figcaption> Hidden layer width=256, L=5 </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/fox-hidden64-L10.png" style="width: 400px; height: auto;" />
+                <figcaption> Hidden layer width=64, L=10 </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/fox-hidden128-L10.png" style="width: 400px; height: auto;" />
+                <figcaption> Hidden layer width=128, L=10 </figcaption>
+            </figure>
+        </div>
+
+        <p>
+            I also trained the model on an image of my dog Coco and below are the training iterations progression and training PSNR graph:
+        </p>
+            <div class="image-row" style="display: flex; justify-content: center; gap: 20px;">
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/coco-0.png" style="width: 200px; height: auto;" />
+                <figcaption> Iteration 0 </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/coco-200.png" style="width: 200px; height: auto;" />
+                <figcaption> Iteration 200 </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/coco-400.png" style="width: 200px; height: auto;" />
+                <figcaption> Iteration 400 </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/coco-600.png" style="width: 200px; height: auto;" />
+                <figcaption> Iteration 600 </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/coco-1000.png" style="width: 200px; height: auto;" />
+                <figcaption> Iteration 1000 </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/coco-1400.png" style="width: 200px; height: auto;" />
+                <figcaption> Iteration 1400 </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/coco-2200.png" style="width: 200px; height: auto;" />
+                <figcaption> Iteration 2200 </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/coco-2999.png" style="width: 200px; height: auto;" />
+                <figcaption> Iteration 2999 </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/Coco_PSNR.png" style="width: 500px; height: auto;" />
+                <figcaption> Coco Training PSNR </figcaption>
+            </figure>
+        </div>
+    </div>
+
+    <h2> Part 2: Fit a Neural Radiance Field from Multi-view Images </h2>
+    <div>
+        <h3> Part 2.1: Create Rays from Cameras </h3>
+        <p>
+            In this part, I created helper functions for the NeRF that convert Camera to World Coordinates, Pixel to Camera Coordinates, 
+            and Pixel to Ray. For the camera to world conversion, I first converted camera coordinates into homogenous coordinates, 
+            multiplying it by the camera-to-world matrix in row-vector form to get the world coordinates in homogenous coordinate form, 
+            then removing the homogenous coordinate by dividing it. Similarly, for the pixel to camera conversion, I constructed 
+            homogenous pixel coordinates, inverted the intrinsic matrix K and applied the inverted K matrix in row-vector form. 
+        </p>
+        <p>
+            To find the rays from the pixel, I set the depth to be 1 for all pixels, and used the Camera to World and Pixel to Camera 
+            conversion functions to map each pixel to camera space then world space. The ray origin is the camera position given by 
+            the translation part of the c2w matrix and I got the ray direction by subtracting this origin from the world coordinates 
+            point and normalizing the output.
+        </p>
+
+        <h3> Part 2.2: Sampling </h3>
+        <p>
+            For ray sampling, I implemented a global sampling approach where I computed the rays for all pixels across all images 
+            and then did a random sample from this dataset. I created a class called SampleRaysFromImage and looped over each 
+            image-camera pair to create a flattened grid of pixel indices, added 0.5 to the x and y to make them centered by 
+            the pixel, and used the camera intrinsics and extrinsics to convert these pixel coordinates into ray origins and 
+            directions with the corresponding colors. 
+        </p>
+        <p>
+            To sample the points along each ray, I discretized the segment between a near and far bound (near=2 and far=6 in 
+            this case) into a fixed number of depth values and added a small perturbation during training. Then, these depths 
+            were converted into 3D points using the ray equation.
+        </p>
+
+        <h3> Part 2.3: Putting the Dataloading All Together </h3>
+        <p>
+            Using the classes and functions I implemented from the previous parts, I created a dataset from the images and 
+            set up a Dataloader that could load the data in batches. For each batch, I call sample_along_rays to get the sampled 
+            3D points along the corresponding rays. Once again, I visualized the rays of the sample points using Viser. 
+        </p>
+        <p>
+            Below shows the visualization of the various camera angles and rays for the entire dataset, the random rays from 
+            the entire and top left corner of the first Lego image:
+        </p>
+        <div class="image-row" style="display: flex; justify-content: center; gap: 20px;">
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/lego_cameras_rays.png" style="width: 300px; height: auto;" />
+                <figcaption> Lego Cameras and Rays </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/Lego_random_rays.png" style="width: 400px; height: auto;" />
+                <figcaption> Lego Random Rays from one Camera </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/lego_top_left_rays.png" style="width: 400px; height: auto;" />
+                <figcaption> Lego Top Left Corner Rays from one Camera</figcaption>
+            </figure>
+        </div>
+
+        <h3> Part 2.4: Neural Radiance Field </h3>
+        <p>
+            For the NeRF model, I created the below network structure:
+        </p>
+        <figure style="flex: 0 0 auto; text-align: center;">
+            <img src="./media/mlp_nerf.png" style="width: 600px; height: auto;" />
+            <figcaption> NeRF MLP Network Structure </figcaption>
+        </figure>
+        <p>
+            It takes in the 3D world coordinates of the image and the corresponding ray directions and outputs the density 
+            and color (RGB) for each 3D sample. The network is much deeper than the one I created in Part 1 and there is 
+            a skip connection that concatenates the encoded input back into the middle layers. For this model, I still 
+            use positional encoding on the input, with 8 hidden layers with ReLU activations between, and a final sigmoid 
+            activation for the color output.
+        </p>
+
+        <h3> Part 2.5: Volume Rendering </h3>
+        <p>
+            In volume rendering, I followed the discrete approximation of the core volume rendering equation to get the 
+            rendered colors when passing in the densities, colors, and step size. 
+        </p>
+        <p>
+            I trained the NeRF model on the lego dataset by predicting the densities and rgb of the sampled points and using 
+            volume rendering to find the pixel colors. Within the training loop, I also kept track of the training and mean 
+            validation PSNR values at each iteration.
+        </p>
+        <p>
+            Here is the architecture and hyperparameters of my model:
+            <ul>
+                <li> 8 linear hidden layers with ReLU activation for the hidden layers and a sigmoid output activation </li>
+                <li> Hidden layer width of 256 </li>
+                <li> Adam optimizer with learning rate of 5e-4 </li>
+                <li> Num_samples = 64, Far = 6, Near = 2 </li>
+                <li> Trained for 1500 iterations </li>
+            </ul>
+        </p>
+        <p>
+            With these hyperparameters, I was able to get a training PSNR of 24.15. The validation PSNR was also above 24. 
+            Below shows the training progression on one of the validation images as well as the training and validation PSNR graphs:
+        </p>
+        <div class="image-row" style="display: flex; justify-content: center; gap: 20px;">
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/000000.jpg" style="width: 200px; height: auto;" />
+                <figcaption> Iteration 0 </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/000100.jpg" style="width: 200px; height: auto;" />
+                <figcaption> Iteration 100 </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/000300.jpg" style="width: 200px; height: auto;" />
+                <figcaption> Iteration 300 </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/000500.jpg" style="width: 200px; height: auto;" />
+                <figcaption> Iteration 500 </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/000700.jpg" style="width: 200px; height: auto;" />
+                <figcaption> Iteration 700 </figcaption>
+            </figure>
+                        <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/000900.jpg" style="width: 200px; height: auto;" />
+                <figcaption> Iteration 900 </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/001000.jpg" style="width: 200px; height: auto;" />
+                <figcaption> Iteration 1000 </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/001400.jpg" style="width: 200px; height: auto;" />
+                <figcaption> Iteration 1400 </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/Lego_training_progression.png" style="width: 500px; height: auto;" />
+                <figcaption> Lego Training Progression </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/lego_validation_psnr.png" style="width: 500px; height: auto;" />
+                <figcaption> Lego Validation PSNR </figcaption>
+            </figure>
+        </div>
+        <p> Here is model used to render a novel view and created into a GIF: </p>
+        <div class="image-row" style="display: flex; justify-content: center; gap: 20px;">
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/2.5.gif" style="width: 400px; height: auto;" />
+                <figcaption> Lego Novel View GIF </figcaption>
+            </figure>
+        </div>
+
+        <h3> Part 2.6: Training with your own data </h3>
+        <p>
+            I initially tried training with the dataset captured from Part 0.2. However, the results were unideal as I believe 
+            I captured from too many angles and not enough from a consistent circular trajectory around the object. Thus, 
+            I went back and recaptured the images.
+        </p>
+        <p>
+            After recapturing the dataset and A LOT of trial and error, I decided to train the model on 4000 iterations with 
+            Near=0.1, Far=0.6, Num_samples=64. The other hyperparameters are the same as the previous part (Adam Optimizer, LR=5e-4). 
+            This reached a training PSNR of around 19. However, the gifs generated on the x, y, and z rotation scale were still very blurry.
+        </p>
+        <p>
+            Thus, I trained the model on another 2000 iterations for a total of 6000 iterations, which brought the PSNR up to 20 
+            - below is the result. The NeRF reconstruction on a singular image, although not ideal, didn’t look too horrible. 
+            However, when rotated around the x, y, and z axis for a circular trajectory the outputs were very blurry.
+        </p>
+        <div class="image-row" style="display: flex; justify-content: center; gap: 20px;">
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/validation_comparison_train_6000.png" style="width: 500px; height: auto;" />
+                <figcaption> 6000 Iterations Output Comparison </figcaption>
+            </figure>
+        </div>
+        <p>
+            I increased the training for another 2000 iterations (now a total of 8000 iterations). The PSNR didn’t seem to 
+            increase anymore, staggering at a little above 20. However, the NeRF output did look better.
+        </p>
+        <div class="image-row" style="display: flex; justify-content: center; gap: 20px;">
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/train1_comparison_8000.png" style="width: 500px; height: auto;" />
+                <figcaption> 8000 Iterations Output Comparison </figcaption>
+            </figure>
+        </div>
+        <p>
+            Below shows the training progression as well as the training PSNR and training loss for 8000 iterations. 
+        </p>
+        <div class="image-row" style="display: flex; justify-content: center; gap: 20px;">
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/200.jpg" style="width: 200px; height: auto;" />
+                <figcaption> Iteration 200 </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/400.jpg" style="width: 200px; height: auto;" />
+                <figcaption> Iteration 400 </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/800.jpg" style="width: 200px; height: auto;" />
+                <figcaption> Iteration 800 </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/1200.jpg" style="width: 200px; height: auto;" />
+                <figcaption> Iteration 1200 </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/1600.jpg" style="width: 200px; height: auto;" />
+                <figcaption> Iteration 1600 </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/2000.jpg" style="width: 200px; height: auto;" />
+                <figcaption> Iteration 2000 </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/2200.jpg" style="width: 200px; height: auto;" />
+                <figcaption> Iteration 2200 </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/2400.jpg" style="width: 200px; height: auto;" />
+                <figcaption> Iteration 2400 </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/2.6_training_psnr.png" style="width: 400px; height: auto;" />
+                <figcaption> Training PSNR </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/2.6_training_loss.png" style="width: 400px; height: auto;" />
+                <figcaption> Training Loss </figcaption>
+            </figure>
+        </div>
+        <p>
+            These are the best results I could get after playing around with various rotation angles:
+        </p>
+        <div class="image-row" style="display: flex; justify-content: center; gap: 20px;">
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/2.6_8000_train2_rotx.gif" style="width: 300px; height: auto;" />
+                <figcaption> 8000 Iterations Rotation (x-axis) </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/2.6_8000_train2_roty.gif" style="width: 300px; height: auto;" />
+                <figcaption> 8000 Iterations Rotation (y-axis) </figcaption>
+            </figure>
+        </div>
+        <p>
+            Due to the significant amount of computation and time spent on this part, I was not able to enhance it further. 
+        </p>
+    </div>
+</body>
+</html>
