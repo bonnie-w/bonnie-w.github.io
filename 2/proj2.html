@@ -9,51 +9,6 @@
     <h1> Project 2: Fun with Filters and Frequencies! </h1>
     <h2> Part 1: Fun with Filters </h2>
     <h3> 1.1 Convolutions from Scratch! </h3>    
-    <h4> Convolution Implementation with 4 For-Loops </h4>
-    <pre><code>
-    def convolve(image, filter):
-        # pad the image
-        image_padded = np.pad(image, ((filter.shape[0]//2, filter.shape[0]//2), (filter.shape[1]//2, filter.shape[1]//2)))
-
-        # flip filter
-        filter = np.flipud(np.fliplr(filter))
-
-        # construct output matrix
-        output_x = image_padded.shape[0]-filter.shape[0]+1
-        output_y = image_padded.shape[1]-filter.shape[1]+1
-        output = np.empty((output_x, output_y))
-
-        # 4 for loops: go through each image square
-        for image_x in range(output_x):
-            for image_y in range(output_y):
-                # go through each filter
-                curr_sum = 0
-                for filter_x in range(filter.shape[0]):
-                    for filter_y in range(filter.shape[1]):
-                        curr_sum += image_padded[image_x+filter_x][image_y+filter_y] * filter[filter_x][filter_y]
-                output[image_x][image_y] = curr_sum
-        return output
-    </code></pre>
-    <h4> Convolution Implementation with 2 For-Loops </h4>
-    <pre><code>
-    def convolve2(image, filter):
-        # pad the image
-        image_padded = np.pad(image, ((filter.shape[0]//2, filter.shape[0]//2), (filter.shape[1]//2, filter.shape[1]//2)))
-        
-        # flip filter
-        filter = np.flipud(np.fliplr(filter))
-
-        # construct output matrix
-        output_x = image_padded.shape[0]-filter.shape[0]+1
-        output_y = image_padded.shape[1]-filter.shape[1]+1
-        output = np.empty((output_x, output_y))
-
-        for image_x in range(output.shape[0]):
-            for image_y in range(output.shape[1]):
-                curr_sum = np.sum(image_padded[image_x:image_x+filter.shape[0], image_y:image_y+filter.shape[1]] * filter)
-                output[image_x][image_y] = curr_sum
-        return output
-    </code></pre>
         <p>
             The convolution with the 9x9 box filter transformed the originally clear high-resolution image into a blurred version of 
             the image. The convolution using 4 for-loops took the longest time of around 21.36 seconds, using 2 for-loops was much 
