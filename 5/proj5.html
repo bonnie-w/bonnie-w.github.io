@@ -388,7 +388,7 @@
             </figure>
             <figure style="flex: 0 0 auto; text-align: center;">
                 <img src="./media/tree_img.png" style="width: 200px; height: auto;" />
-                <figcaption> Mountain Range (Original) </figcaption>
+                <figcaption> Christmas Tree (Original) </figcaption>
             </figure>
         </div>
     </div>
@@ -492,7 +492,7 @@
             </figure>
             <figure style="flex: 0 0 auto; text-align: center;">
                 <img src="./media/1.7.1_xmas_original.png" style="width: 200px; height: auto;" />
-                <figcaption> Mountain Range (Original) </figcaption>
+                <figcaption> Drawn Xmas Tree (Original) </figcaption>
             </figure>
         </div>
     </div>
@@ -794,6 +794,291 @@
             <figure style="flex: 0 0 auto; text-align: center;">
                 <img src="./media/1.9_hybrid_forest_jellyfish.png" style="width: 200px; height: auto;" />
                 <figcaption> Forest (close) </figcaption>
+            </figure>
+        </div>
+    </div>
+
+    <h2> Part B: The Power of Diffusion Models! </h2>
+    <h3> Part 1: Training a Single-Step Denoising UNet </h3>   
+    <h4> 1.1 Implementing the UNet </h4>
+    <div>
+        <p>
+            In this part I implemented some simple operations and composed operations from standard UNet Operations and built the 
+            Unconditional UNet:
+        </p>
+        <div class="image-row" style="display: flex; justify-content: center; gap: 20px;">
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/unconditional_arch.png" style="width: 600px; height: auto;" />
+                <figcaption> Unconditional UNet </figcaption>
+            </figure>
+        </div>
+    </div> 
+
+    <h4> 1.2 Using the UNet to Train a Denoiser </h4>
+    <div>
+        <p>
+            We want to train the one-step denoiser to take in a noisy image and map it to a clean image to optimize over L2 loss. 
+            But before training, we want to generate training data of image pairs (noisy, clean). I generate noisy digits by scaling 
+            a random noise image with noise strength sigma (σ)  and adding it to the given digit image.
+        </p>
+        <p>
+            Below is a visualization of the noising process using various values of σ at [0.0, 0.2, 0.4, 0.5, 0.6, 0.8, 1.0]:
+        </p>
+        <div class="image-row" style="display: flex; justify-content: center;">
+            <img src="./media/1.2_sigma0.png" style="all: unset; width: 300px; height: auto;" />
+        </div>
+        <div class="image-row" style="display: flex; justify-content: center; ">
+            <img src="./media/1.2_sigma0.2.png" style="all: unset; width: 300px; height: auto;" />
+        </div> 
+        <div class="image-row" style="display: flex; justify-content: center; ">
+            <img src="./media/1.2_sigma0.4.png" style="all: unset; width: 300px; height: auto;" />
+        </div> 
+        <div class="image-row" style="display: flex; justify-content: center; ">
+            <img src="./media/1.2_sigma0.5.png" style="all: unset; width: 300px; height: auto;" />
+        </div>
+        <div class="image-row" style="display: flex; justify-content: center; ">
+            <img src="./media/1.2_sigma0.6.png" style="all: unset; width: 300px; height: auto;" />
+        </div>
+        <div class="image-row" style="display: flex; justify-content: center; ">
+            <img src="./media/1.2_sigma0.8.png" style="all: unset; width: 300px; height: auto;" />
+        </div>
+        <div class="image-row" style="display: flex; justify-content: center; ">
+            <img src="./media/1.2_sigma1.0.png" style="all: unset; width: 300px; height: auto;" />
+        </div>
+    </div> 
+
+    <h4> 1.2.1 Training </h4>
+    <div>
+        <p>
+            Then I trained a model to denoise a noisy image created with noise_level = 0.5 using these hyperparameters:
+            <ul>
+                <li> batch_size = 256 </li>
+                <li> Adam Optimizer, learning_rate = 1e-4 </li>
+                <li> hidden_dim = 128 </li>
+                <li> num_epochs = 5 </li>
+            </ul>
+        </p>
+        <p>
+            Below shows the input images, after noise is added, performance after 1st epoch, and after 5th epoch as well as 
+            the training loss curve:
+        </p>
+        <div class="image-row" style="display: flex; justify-content: center; gap: 20px;">
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/1.2.1_afterEpoch1.png" style="width: 350px; height: auto;" />
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/1.2.1_afterEpoch5.png" style="width: 350px; height: auto;" />
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/1.2.1_trainingLoss.png" style="width: 500px; height: auto;" />
+                <figcaption> Training Loss </figcaption>
+            </figure>
+        </div>
+    </div> 
+
+    <h4> 1.2.2 Out-of-Distribution Testing </h4>
+    <div>
+        <p>
+            I trained the denoiser with digits added noise with noise_level = 0.5. However, to see how the model performs for 
+            other noise levels, I tested the results on test sets that had other levels of noise levels of 
+            [0.0, 0.2, 0.4, 0.5, 0.6, 0.8, 1.0]:
+        </p>
+        <div class="image-row" style="display: flex; justify-content: center; gap: 20px;">
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/1.2.2_sigma0.png" style="width: 350px; height: auto;" />
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/1.2.2_sigma0.2.png" style="width: 350px; height: auto;" />
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/1.2.2_sigma0.4.png" style="width: 350px; height: auto;" />
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/1.2.2_sigma0.5.png" style="width: 350px; height: auto;" />
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/1.2.2_sigma0.6.png" style="width: 350px; height: auto;" />
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/1.2.2_sigma0.8.png" style="width: 350px; height: auto;" />
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/1.2.2_sigma1.0.png" style="width: 350px; height: auto;" />
+            </figure>
+        </div>
+    </div> 
+
+    <h4> 1.2.3 Denoising Pure Noise </h4>
+    <div>
+        <p>
+            Now, I repeat the denoising model training process but instead of using an image with added noise, we start with 
+            pure random Gaussian noise. This makes denoising a generative task. Below shows the results of the input random noise, 
+            performance after 1st epoch, and after 5th epoch as well as the training loss curve: 
+        </p>
+        <div class="image-row" style="display: flex; justify-content: center; gap: 20px;">
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/1.2.3_afterEpoch1.png" style="width: 350px; height: auto;" />
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/1.2.3_afterEpoch5.png" style="width: 350px; height: auto;" />
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/1.2.3_trainingLoss.png " style="width: 500px; height: auto;" />
+                <figcaption> Training Loss </figcaption>
+            </figure>
+        </div>
+        <p>
+            From the outputs, we see that after the first epoch there is some sort of blurred digit shape but for all of them 
+            they seem the same – like a blend/average of all 10 digits in one. After epoch 5, there is some improvement where 
+            the digit edges are smoother and more-so resembling ‘3’ at the very slightest, but overall all generated digits still 
+            look the same like a blob. This might be happening since we trained the model to denoise using L2 (MSE) loss and 
+            the input has no information about the digit it should be reconstructing so the optimal MSE minimization prediction 
+            is to average all the digits in the training set rather than singular digits. With no conditioning, the model reduces 
+            the error by converging towards the mean of the dataset.
+        </p>
+    </div> 
+
+    <h3> Part 2: Training a Flow Matching Model </h3>
+    <h4> 2.1 Adding Time Conditioning to UNet </h4>
+    <div>
+        <p>
+            To fix the above problem, we add time conditioning into UNet by injecting a scalar t. Previously, the UNet only 
+            learned one single mapping from noise to clean image estimate but didn’t know how much noise was added. The time 
+            conditioning gives the denoiser context about how much noise is present in the input. I implemented a new FCBlock 
+            for conditioning and added it to the UNett architecture to create the below Conditioned UNet:
+        </p>
+        <div class="image-row" style="display: flex; justify-content: center; gap: 20px;">
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/conditional_arch_fm.png" style="width: 600px; height: auto;" />
+                <figcaption> Conditioned UNet </figcaption>
+            </figure>
+        </div>
+    </div>
+
+    <h4> 2.2 Training the UNet </h4>
+    <div>
+        <p>
+            To train the time-conditioned UNet, I repeated the process of picking random images from the training set, a random 
+            timestep and added noise to get x_t then trained the denoiser to predict the flow at x_t for various images and 
+            timesteps until the model converges.
+        </p>
+        <p>
+            I used the following hyperparameters:
+            <ul>
+                <li> batch_size = 64 </li>
+                <li> Adam Optimizer, learning_rate = 1e-2 </li>
+                <li> hidden_dim = 64 </li>
+                <li> Exponential LR decay scheduler </li>
+                <li> num_epochs = 20 </li>
+            </ul>
+        </p>
+        <div class="image-row" style="display: flex; justify-content: center; gap: 20px;">
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/algo1_t_only_fm.png" style="width: 600px; height: auto;" />
+                <figcaption> Training time-conditioned UNet </figcaption>
+            </figure>
+        </div>
+        <p>
+            This is the training loss curve for the whole training process of 20 epochs:
+        </p>
+        <div class="image-row" style="display: flex; justify-content: center; gap: 20px;">
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/2.2_trainingLoss.png" style="width: 500px; height: auto;" />
+                <figcaption> Training Loss </figcaption>
+            </figure>
+        </div>
+    </div>
+
+    <h4> 2.3 Sampling from the UNet </h4>
+    <div>
+        <p> I implemented the algorithm below to sample from the time-conditioned UNet: </p>
+        <div class="image-row" style="display: flex; justify-content: center; gap: 20px;">
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/algo2_t_only_fm.png" style="width: 500px; height: auto;" />
+                <figcaption> Sampling from time-conditioned UNet </figcaption>
+            </figure>
+        </div>
+        <p> This is the results after 1 epoch, 5 epochs, 10 epochs, and 20 epochs: </p>
+        <div class="image-row" style="display: flex; justify-content: center; gap: 20px;">
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/2.3_afterEpoch1.png" style="width: 350px; height: auto;" />
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/2.3_afterEpoch5.png" style="width: 350px; height: auto;" />
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/2.3_afterEpoch10.png " style="width: 350px; height: auto;" />
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/2.3_afterEpoch20.png " style="width: 350px; height: auto;" />
+            </figure>
+        </div>
+    </div>
+
+    <h4> 2.4 Adding Class-Conditioning to UNet </h4>
+    <div>
+        <p> 
+            In this part I implemented class-conditioning UNet on the digits 0-9 by adding 2 more FCBlocks to the UNet. 
+            In class-conditioning, we give the UNet the noisy image as well as the class label (the digit) so the model is trained 
+            to denoise that depends on the label. This way the model can choose what to generate based on the class label. 
+        </p>
+    </div>
+
+    <h4> 2.5 Training the UNet </h4>
+    <div>
+        <p> I train the class-conditioned UNet following the algorithm below: </p>
+        <div class="image-row" style="display: flex; justify-content: center; gap: 20px;">
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/algo3_c_fm.png" style="width: 500px; height: auto;" />
+            </figure>
+        </div>
+        <p> Below shows the training loss for class-conditioned UNet: </p>
+        <div class="image-row" style="display: flex; justify-content: center; gap: 20px;">
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/2.5_trainingLoss.png" style="width: 500px; height: auto;" />
+                <figcaption> Training Loss </figcaption>
+            </figure>
+        </div>
+    </div>
+
+    <h4> 2.6 Sampling from the UNet </h4>
+    <div>
+        <p> To sample from the UNet I implemented the following algorithm with a CFG value of 5.0: </p>
+        <div class="image-row" style="display: flex; justify-content: center; gap: 20px;">
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/algo4_c_fm.png" style="width: 500px; height: auto;" />
+            </figure>
+        </div>
+        <p> Below shows the results for the class-conditioned UNet after 1 epoch, 5 epochs, and 10 epochs: </p>
+        <div class="image-row" style="display: flex; justify-content: center; gap: 20px;">
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/2.6_afterEpoch1.png" style="width: 350px; height: auto;" />
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/2.6_afterEpoch5.png" style="width: 350px; height: auto;" />
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/2.6_afterEpoch10.png " style="width: 350px; height: auto;" />
+            </figure>
+        </div>
+        <p>
+            I also tested it without the learning rate scheduler. To compensate for the loss of the scheduler I decreased the 
+            learning rate to become 3e-3 instead of 1e-2 previously. Visually, the results are pretty much the same but from 
+            the loss curve we see that the no LR scheduler starts off at a higher loss and also converges to a slightly higher loss:
+        </p>
+        <div class="image-row" style="display: flex; justify-content: center; gap: 20px;">
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/2.6_afterEpoch1.png" style="width: 350px; height: auto;" />
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/2.6_afterEpoch5.png" style="width: 350px; height: auto;" />
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/2.6_afterEpoch10.png " style="width: 350px; height: auto;" />
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/2.6_trainingLoss(NoScheduler).png" style="width: 350px; height: auto;" />
+                <figcaption> Training Loss </figcaption>
             </figure>
         </div>
     </div>
