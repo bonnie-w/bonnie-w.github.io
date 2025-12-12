@@ -1,0 +1,801 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title> Project 5: Fun With Diffusion Models! </title>
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <a href="../index.html" class="back-button"> Back to Home </a>
+    <h1> Project 5: Fun With Diffusion Models! </h1>
+    <h2> Part A: The Power of Diffusion Models! </h2>
+    <h3> Part 0: Setup </h3>   
+    <div>
+        <p>
+            To explore the DeepFloyd IF diffusion model, I generated a list of text prompts to use for image generation. The random seed 
+            I chose is 180. Here are 3 text prompts I chose to generate images for:
+            <ul>
+                <li> A photo of point reyes </li>
+                <li> A watercolor of a redwood forest with sunlight breaking through the canopy </li>
+                <li> A lithograph of waterfalls </li>
+            </ul>
+        </p>
+
+        <p>
+            As displayed below, I tried 4 different num_inference_steps values when generating the images of 5, 20 (default), 50, 
+            and 100. I wanted to try out both smaller and larger inference steps than default and a much larger value. At all of 
+            these step values the image generated overall aligns pretty well with what I described in the text. When there are 
+            less steps (eg. 5), there are less details in the image and the images have some noise – the images seem more ‘soft’. 
+            As I increased the number of steps, the images got ‘sharper’ with clearer structure, details, and more tightly aligned 
+            with the requested style in the prompt such as ‘photograph’ or ‘watercolor’. 
+        </p>
+        <div class="image-row" style="display: flex; justify-content: center; gap: 20px;">
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/part0-inference5.png" style="width: 400px; height: auto;" />
+                <figcaption> num_inference_steps = 5 </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/part0-inference20.png" style="width: 400px; height: auto;" />
+                <figcaption> num_inference_steps = 20 </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/part0-inference50.png" style="width: 400px; height: auto;" />
+                <figcaption> num_inference_steps = 50 </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/part0-inference100.png" style="width: 400px; height: auto;" />
+                <figcaption> num_inference_steps = 100 </figcaption>
+            </figure>
+        </div>
+    </div> 
+
+    <h3> Part 1: Sampling Loops </h3>
+    <h4> 1.1 Implementing the Forward Process </h4>
+    <div>
+        <p> In the forward process, we add noise to a clean image. For a given timestep t, it scales the clean image by the 
+            sqrt(alphas_cumprod[t]) and adds gaussian noise that is scaled by sqrt(1-alphas_cumprod[t]). I generated noisy 
+            versions of the Campanile at timesteps t = 250, 500, and 750. As visualized below, the three images get more and 
+            more noisy as t becomes larger where the Campanile is still quite visible at 250 but basically unrecognizable at 750:
+        </p>
+        <div class="image-row" style="display: flex; justify-content: center; gap: 20px;">
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/campanile_test_img.png" style="width: 200px; height: auto;" />
+                <figcaption> Campanile (Original) </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/campanile_noise_250.png" style="width: 200px; height: auto;" />
+                <figcaption> Campanile Noisey (t=250) </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/campanile_noise_500.png" style="width: 200px; height: auto;" />
+                <figcaption> Campanile Noisey (t=500) </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/campanile_noise_750.png" style="width: 200px; height: auto;" />
+                <figcaption> Campanile Noisey (t=750) </figcaption>
+            </figure>
+        </div>
+    </div>
+
+    <h4> 1.2 Classical Denoising </h4>
+    <div>
+        <p>
+            To denoise the noisy images I just created, I first try classical denoising. I use a Gaussian blur filter with kernel 
+            size of 5 to try and remove the noise. These are the results:
+        </p>
+        <div class="image-row" style="display: flex; justify-content: center; gap: 20px;">
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/campanile_noise_250.png" style="width: 200px; height: auto;" />
+                <figcaption> Campanile Noisey (t=250) </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/campanile_noise_500.png" style="width: 200px; height: auto;" />
+                <figcaption> Campanile Noisey (t=500) </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/campanile_noise_750.png" style="width: 200px; height: auto;" />
+                <figcaption> Campanile Noisey (t=750) </figcaption>
+            </figure>
+        </div> 
+        <div class="image-row" style="display: flex; justify-content: center; gap: 20px;">
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/campanile_250_denoised.png" style="width: 200px; height: auto;" />
+                <figcaption> Campanile Gaussian Denoised <br> (t=250) </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/campanile_500_denoised.png" style="width: 200px; height: auto;" />
+                <figcaption> Campanile Gaussian Denoised <br> (t=500) </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/campanile_750_denoised.png" style="width: 200px; height: auto;" />
+                <figcaption> Campanile Gaussian Denoised <br> (t=750) </figcaption>
+            </figure>
+        </div>
+    </div>
+
+    <h4> 1.3 One-Step Denoising </h4>
+    <div>
+        <p>
+            In one-step denoising, I used the pretrained diffusion UNet to denoise the noisy Campanile images from 1.1 again. 
+            or each of the noise levels, I applied the forward process to get the noisy images. Then I passed in the noisy image, 
+            the corresponding timestep, and the photo’s embedding (‘a high quality photo’) into the UNet, which gave an estimation 
+            of the Gaussian noise that had been added. To get the predicted original image, I scaled and removed the predicted 
+            noise using the same equation as 1.1. 
+        </p>
+        <div class="image-row" style="display: flex; justify-content: center; gap: 20px;">
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/campanile_noise_250.png" style="width: 200px; height: auto;" />
+                <figcaption> Campanile Noisey (t=250) </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/campanile_noise_500.png" style="width: 200px; height: auto;" />
+                <figcaption> Campanile Noisey (t=500) </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/campanile_noise_750.png" style="width: 200px; height: auto;" />
+                <figcaption> Campanile Noisey (t=750) </figcaption>
+            </figure>
+        </div> 
+        <div class="image-row" style="display: flex; justify-content: center; gap: 20px;">
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/1.3_denoised_250.png" style="width: 200px; height: auto;" />
+                <figcaption> One-Step Denoised <br> (t=250) </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/1.3_denoised_500.png" style="width: 200px; height: auto;" />
+                <figcaption> One-Step Denoised <br> (t=500) </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/1.3_denoised_750.png" style="width: 200px; height: auto;" />
+                <figcaption> One-Step Denoised <br> (t=750) </figcaption>
+            </figure>
+        </div>
+    </div>
+
+    <h4> 1.4 Iterative Denoising </h4>
+    <div>
+        <p>
+            To make sure the denoising still performs well when there is a lot of noise, I implemented iterative denoising. 
+            I created a list that stored the decreasing timesteps from 990 to 0 with a stride of 30. From a given start index 
+            in this list to the end of the list, I iterated through and used UNet to predict the noise, and then denoised 
+            using the following formula:
+        </p>
+        <div class="image-row" style="display: flex; justify-content: center; gap: 20px;">
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/Screenshot 2025-12-11 at 18.30.07.png" style="width: 200px; height: auto;" />
+            </figure>
+        </div> 
+        <p>
+            I used a start index of timestep 10 to run the iterative_denoise function. Below shows every 5th image from the 
+            denoising loop as well as comparisons to gaussian blurring and one-step denoising. From the results we see that 
+            the output from iterative_denoise produces a cleaner original image that has more details in the structure which 
+            is an improvement from one-step denoise, which is also much better than gaussian blur. 
+        </p>
+        <div class="image-row" style="display: flex; justify-content: center; gap: 20px;">
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/1.4_noisy_t90.png" style="width: 150px; height: auto;" />
+                <figcaption> Noisy Campanile <br> (t=250) </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/1.4_noisy_t240.png" style="width: 150px; height: auto;" />
+                <figcaption> Noisy Campanile <br> (t=500) </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/1.4_noisy_t390.png" style="width: 150px; height: auto;" />
+                <figcaption> Noisy Campanile <br> (t=750) </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/1.4_noisy_t540.png" style="width: 150px; height: auto;" />
+                <figcaption> Noisy Campanile <br> (t=750) </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/1.4_noisy_t690.png" style="width: 150px; height: auto;" />
+                <figcaption> Noisy Campanile <br> (t=750) </figcaption>
+            </figure>
+        </div>
+        <div class="image-row" style="display: flex; justify-content: center; gap: 20px;">
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/campanile_test_img.png" style="width: 200px; height: auto;" />
+                <figcaption> Campanile (Original) </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/1.4_clean.png" style="width: 200px; height: auto;" />
+                <figcaption> Iteratively Denoised </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/1.4_clean_one_step.png" style="width: 200px; height: auto;" />
+                <figcaption> One-Step Denoised </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/1.4_blur_filtered.png" style="width: 200px; height: auto;" />
+                <figcaption> Gaussian Blur </figcaption>
+            </figure>
+        </div>
+    </div>
+
+    <h4> 1.5 Diffusion Model Sampling </h4>
+    <div>
+        <p>
+            In this part, instead of adding noise to a pre-existing image, I generated random noise and used the prompt ‘a high 
+            quality photo’ and i_start=0 to generate 5 different images using iterative_denoise. Here are the images that were 
+            generated:
+        </p>
+        <div class="image-row" style="display: flex; justify-content: center; gap: 20px;">
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/1.5_img0.png" style="width: 150px; height: auto;" />
+                <figcaption> Sample 1 </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/1.5_img1.png" style="width: 150px; height: auto;" />
+                <figcaption> Sample 2 </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/1.5_img2.png" style="width: 150px; height: auto;" />
+                <figcaption> Sample 3 </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/1.5_img3.png" style="width: 150px; height: auto;" />
+                <figcaption> Sample 4 </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/1.5_img4.png" style="width: 150px; height: auto;" />
+                <figcaption> Sample 5 </figcaption>
+            </figure>
+        </div>
+        <p> The images produced are decent, but not high quality images. </p>
+    </div>
+
+    <h4> 1.6 Classifier-Free Guidance (CFG) </h4>
+    <div>
+        <p>
+            To improve the quality of the images, I implement classifier-free guidance where I compute the conditional and 
+            unconditional noise estimate at each step and sum the unconditional noise estimate with the difference between
+             conditional and unconditional noise estimates scaled by a strength controlling the CFG. When the strength is 0, 
+             there is unconditional noise estimate and at strength=1 it is conditional noise estimate. When strength > 1, the 
+             images have much higher quality. 
+        </p>
+        <p>
+            Below shows the 5 images with the prompt ‘a high quality photo’ using a CFG strength scale of 7. The results 
+            produced are clearer than the section above but I also noticed that most are of human / animal figures rather 
+            than nature views:
+        </p>
+        <div class="image-row" style="display: flex; justify-content: center; gap: 20px;">
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/1.6_img0.png" style="width: 150px; height: auto;" />
+                <figcaption> Sample 1 </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/1.6_img1.png" style="width: 150px; height: auto;" />
+                <figcaption> Sample 2 </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/1.6_img2.png" style="width: 150px; height: auto;" />
+                <figcaption> Sample 3 </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/1.6_img3.png" style="width: 150px; height: auto;" />
+                <figcaption> Sample 4 </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/1.6_img4.png" style="width: 150px; height: auto;" />
+                <figcaption> Sample 5 </figcaption>
+            </figure>
+        </div>
+    </div>
+
+    <h4> 1.7 Image-to-image Translation </h4>
+    <div>
+        <p>
+            For image-to-image translation using CFG, I added various amounts of noise using the same forward function to an image 
+            and denoised it with the diffusion model. I used the same prompt ‘a high quality photo’ as the conditioning. From 
+            the results, we can see that when the noise is low the outputs look very similar to the original image, at least
+             maintaining the same type of object. However at larger noise levels, images became completely different than what 
+             was expected. 
+        </p>
+        <p>
+            Below shows edits of the Campanile image at the noise levels [1, 3, 5, 7, 10, 20] with the conditional text 
+            prompt ‘a high quality photo’:
+        </p>
+        <div class="image-row" style="display: flex; justify-content: center; gap: 20px;">
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/1.7_campanile960.png" style="width: 200px; height: auto;" />
+                <figcaption> SDEdit (i_start=1) </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/1.7_campanile900.png" style="width: 200px; height: auto;" />
+                <figcaption> SDEdit (i_start=3) </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/1.7_campanile840.png" style="width: 200px; height: auto;" />
+                <figcaption> SDEdit (i_start=5) </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/1.7_campanile780.png" style="width: 200px; height: auto;" />
+                <figcaption> SDEdit (i_start=7) </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/1.7_campanile690.png" style="width: 200px; height: auto;" />
+                <figcaption> SDEdit (i_start=10) </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/1.7_campanile390.png" style="width: 200px; height: auto;" />
+                <figcaption> SDEdit (i_start=20) </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/campanile_test_img.png" style="width: 200px; height: auto;" />
+                <figcaption> Campanile (Original) </figcaption>
+            </figure>
+        </div>
+        <p>
+            My own test image -- Mountain Range of China:
+        </p>
+        <div class="image-row" style="display: flex; justify-content: center; gap: 20px;">
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/1.7_mountains960.png" style="width: 200px; height: auto;" />
+                <figcaption> SDEdit (i_start=1) </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/1.7_mountains900.png" style="width: 200px; height: auto;" />
+                <figcaption> SDEdit (i_start=3) </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/1.7_mountains840.png" style="width: 200px; height: auto;" />
+                <figcaption> SDEdit (i_start=5) </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/1.7_mountains780.png" style="width: 200px; height: auto;" />
+                <figcaption> SDEdit (i_start=7) </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/1.7_mountains690.png" style="width: 200px; height: auto;" />
+                <figcaption> SDEdit (i_start=10) </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/1.7_mountains390.png" style="width: 200px; height: auto;" />
+                <figcaption> SDEdit (i_start=20) </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/mountains_img.png" style="width: 200px; height: auto;" />
+                <figcaption> Mountain Range (Original) </figcaption>
+            </figure>
+        </div>
+        <p>
+            My own test image -- Union Square Christmas Tree:
+        </p>
+        <div class="image-row" style="display: flex; justify-content: center; gap: 20px;">
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/1.7_tree960.png" style="width: 200px; height: auto;" />
+                <figcaption> SDEdit (i_start=1) </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/1.7_tree900.png" style="width: 200px; height: auto;" />
+                <figcaption> SDEdit (i_start=3) </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/1.7_tree840.png" style="width: 200px; height: auto;" />
+                <figcaption> SDEdit (i_start=5) </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/1.7_tree780.png" style="width: 200px; height: auto;" />
+                <figcaption> SDEdit (i_start=7) </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/1.7_tree690.png" style="width: 200px; height: auto;" />
+                <figcaption> SDEdit (i_start=10) </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/1.7_tree390.png" style="width: 200px; height: auto;" />
+                <figcaption> SDEdit (i_start=20) </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/tree_img.png" style="width: 200px; height: auto;" />
+                <figcaption> Mountain Range (Original) </figcaption>
+            </figure>
+        </div>
+    </div>
+
+    <h4> 1.7.1 Editing Hand-Drawn and Web Images </h4>
+    <div>
+        <p>
+            I also tried image-to-image translation with some web and hand-drawn images. Below shows the edits a web image of 
+            a cherry blossom tree:
+        </p>
+        <div class="image-row" style="display: flex; justify-content: center; gap: 20px;">
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/1.7.1_blossom_t960.png" style="width: 200px; height: auto;" />
+                <figcaption> SDEdit (i_start=1) </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/1.7.1_blossom_t900.png" style="width: 200px; height: auto;" />
+                <figcaption> SDEdit (i_start=3) </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/1.7.1_blossom_t840.png" style="width: 200px; height: auto;" />
+                <figcaption> SDEdit (i_start=5) </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/1.7.1_blossom_t780.png" style="width: 200px; height: auto;" />
+                <figcaption> SDEdit (i_start=7) </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/1.7.1_blossom_t690.png" style="width: 200px; height: auto;" />
+                <figcaption> SDEdit (i_start=10) </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/1.7.1_blossom_t390.png" style="width: 200px; height: auto;" />
+                <figcaption> SDEdit (i_start=20) </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/1.7.1_blossom_original.jpg" style="width: 250px; height: auto;" />
+                <figcaption> Blossom Tree (Original) </figcaption>
+            </figure>
+        </div>
+        <p>
+            And two edits of my hand-drawn images of a lotus:
+        </p>
+        <div class="image-row" style="display: flex; justify-content: center; gap: 20px;">
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/1.7.1_lotus_t960.png" style="width: 200px; height: auto;" />
+                <figcaption> SDEdit (i_start=1) </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/1.7.1_lotus_t900.png" style="width: 200px; height: auto;" />
+                <figcaption> SDEdit (i_start=3) </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/1.7.1_lotus_t840.png" style="width: 200px; height: auto;" />
+                <figcaption> SDEdit (i_start=5) </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/1.7.1_lotus_t780.png" style="width: 200px; height: auto;" />
+                <figcaption> SDEdit (i_start=7) </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/1.7.1_lotus_t690.png" style="width: 200px; height: auto;" />
+                <figcaption> SDEdit (i_start=10) </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/1.7.1_lotus_t390.png" style="width: 200px; height: auto;" />
+                <figcaption> SDEdit (i_start=20) </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/1.7.1_lotus_original.png" style="width: 200px; height: auto;" />
+                <figcaption> Drawn Lotus (Original) </figcaption>
+            </figure>
+        </div>
+        <p>
+            And a christmas tree:
+        </p>
+        <div class="image-row" style="display: flex; justify-content: center; gap: 20px;">
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/1.7.1_xmas_t960.png" style="width: 200px; height: auto;" />
+                <figcaption> SDEdit (i_start=1) </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/1.7.1_xmas_t900.png" style="width: 200px; height: auto;" />
+                <figcaption> SDEdit (i_start=1) </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/1.7.1_xmas_t840.png" style="width: 200px; height: auto;" />
+                <figcaption> SDEdit (i_start=3) </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/1.7.1_xmas_t780.png" style="width: 200px; height: auto;" />
+                <figcaption> SDEdit (i_start=5) </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/1.7.1_xmas_t690.png" style="width: 200px; height: auto;" />
+                <figcaption> SDEdit (i_start=10) </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/1.7.1_xmas_t390.png" style="width: 200px; height: auto;" />
+                <figcaption> SDEdit (i_start=20) </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/1.7.1_xmas_original.png" style="width: 200px; height: auto;" />
+                <figcaption> Mountain Range (Original) </figcaption>
+            </figure>
+        </div>
+    </div>
+
+    <h4> 1.7.2 Inpainting </h4>
+    <div>
+        <p>
+            Using the same procedure, I also implemented the inpaint function that masks an image and runs the iterative 
+            denoising process on the image but then we force what is not in the masked section to be the original image. 
+            I used this process to edit the the image of the top of the Campanile:
+        </p>
+        <div class="image-row" style="display: flex; justify-content: center; gap: 20px;">
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/campanile_test_img.png" style="width: 200px; height: auto;" />
+                <figcaption> Campanile (Original) </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/1.7.2_campanile_mask.png" style="width: 200px; height: auto;" />
+                <figcaption> Mask </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/1.7.2_campanile_replace.png" style="width: 200px; height: auto;" />
+                <figcaption> Hole to fill </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/1.7.2_campanile.png" style="width: 200px; height: auto;" />
+                <figcaption> Campanile Inpainted </figcaption>
+            </figure>
+        </div>
+        <p>
+            Here are also 2 other edits – one of a picture I took from the airplane window with a mask that covered the wing 
+            and the edit removed the wing! The other is of a meditation tent in Costa Rica and the mask was triangular on the 
+            tent roof:
+        </p>
+        <div class="image-row" style="display: flex; justify-content: center; gap: 20px;">
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/1.7.2_plane_original.png" style="width: 200px; height: auto;" />
+                <figcaption> Plane (Original) </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/1.7.2_plane_mask.png" style="width: 200px; height: auto;" />
+                <figcaption> Mask </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/1.7.2_plane_replace.png" style="width: 200px; height: auto;" />
+                <figcaption> Hole to fill </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/1.7.2_plane.png" style="width: 200px; height: auto;" />
+                <figcaption> Plane Inpainted </figcaption>
+            </figure>
+        </div>
+        <div class="image-row" style="display: flex; justify-content: center; gap: 20px;">
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/1.7.2_cr_original.png" style="width: 200px; height: auto;" />
+                <figcaption> Costa Rica (Original) </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/costarica_mask2.png" style="width: 200px; height: auto;" />
+                <figcaption> Mask </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/1.7.2_cr_replace.png" style="width: 200px; height: auto;" />
+                <figcaption> Hole to fill </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/1.7.2_costarica2.png" style="width: 200px; height: auto;" />
+                <figcaption> Costa Rica Inpainted </figcaption>
+            </figure>
+        </div>
+    </div>
+    
+    <h4> 1.7.3 Text-Conditional Image-to-image Translation </h4>
+    <div>
+        <p>
+            For this part, I performed text-guided image-to-image translation. Instead of using the prompt ‘a high quality photo’ 
+            I used my own prompts of choice to condition the denoising process. I tried this on the Campanile image with the prompt 
+            “a stylized ink drawing of a woman beneath cherry blossoms” and this is the results:
+        </p>
+        <div class="image-row" style="display: flex; justify-content: center; gap: 20px;">
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/1.7.3_campanile_t960.png" style="width: 200px; height: auto;" />
+                <figcaption> Cherry Blossom (i_start=1) </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/1.7.3_campanile_t900.png" style="width: 200px; height: auto;" />
+                <figcaption> Cherry Blossom (i_start=3) </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/1.7.3_campanile_t840.png" style="width: 200px; height: auto;" />
+                <figcaption> Cherry Blossom (i_start=5) </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/1.7.3_campanile_t780.png" style="width: 200px; height: auto;" />
+                <figcaption> Cherry Blossom (i_start=7) </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/1.7.3_campanile_t690.png" style="width: 200px; height: auto;" />
+                <figcaption> Cherry Blossom (i_start=10) </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/1.7.3_campanile_t390.png" style="width: 200px; height: auto;" />
+                <figcaption> Cherry Blossom (i_start=20) </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/campanile_test_img.png" style="width: 200px; height: auto;" />
+                <figcaption> Campanile (Original) </figcaption>
+            </figure>
+        </div>
+        <p>
+            I also tried it on a few other image + prompt combos:
+        </p>
+        <p>
+            Costa Rica Tent → “an oil painting of people around a campfire”
+        </p>
+        <div class="image-row" style="display: flex; justify-content: center; gap: 20px;">
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/1.7.3_costarica_t960.png" style="width: 200px; height: auto;" />
+                <figcaption> Campfire (i_start=1) </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/1.7.3_costarica_t900.png" style="width: 200px; height: auto;" />
+                <figcaption> Campfire (i_start=3) </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/1.7.3_costarica_t840.png" style="width: 200px; height: auto;" />
+                <figcaption> Campfire (i_start=5) </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/1.7.3_costarica_t780.png" style="width: 200px; height: auto;" />
+                <figcaption> Campfire (i_start=7) </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/1.7.3_costarica_t780.png" style="width: 200px; height: auto;" />
+                <figcaption> Campfire (i_start=10) </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/1.7.3_costarica_t690.png" style="width: 200px; height: auto;" />
+                <figcaption> Campfire (i_start=20) </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/1.7.2_cr_original.png" style="width: 200px; height: auto;" />
+                <figcaption> Costa Rica (Original) </figcaption>
+            </figure>
+        </div>
+        <p>
+            Pancake → “a photo of a cat sitting on a windowsill overlooking a rainy city”
+        </p>
+        <div class="image-row" style="display: flex; justify-content: center; gap: 20px;">
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/1.7.3_cat_t960.png" style="width: 200px; height: auto;" />
+                <figcaption> Cat (i_start=1) </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/1.7.3_cat_t900.png" style="width: 200px; height: auto;" />
+                <figcaption> Cat (i_start=3) </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/1.7.3_cat_t840.png" style="width: 200px; height: auto;" />
+                <figcaption> Cat (i_start=5) </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/1.7.3_cat_t780.png" style="width: 200px; height: auto;" />
+                <figcaption> Cat (i_start=7) </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/1.7.3_cat_t690.png" style="width: 200px; height: auto;" />
+                <figcaption> Cat (i_start=10) </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/1.7.3_cat_t390.png" style="width: 200px; height: auto;" />
+                <figcaption> Cat (i_start=20) </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/pancake.png" style="width: 200px; height: auto;" />
+                <figcaption> Panscake (Original) </figcaption>
+            </figure>
+        </div>
+        <p>
+            Pancake → “a picture of a colorful jellyfish”
+        </p>
+        <div class="image-row" style="display: flex; justify-content: center; gap: 20px;">
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/1.7.3_jellyfish_t960.png" style="width: 200px; height: auto;" />
+                <figcaption> Jellyfish (i_start=1) </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/1.7.3_jellyfish_t900.png" style="width: 200px; height: auto;" />
+                <figcaption> Jellyfish (i_start=3) </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/1.7.3_jellyfish_t840.png" style="width: 200px; height: auto;" />
+                <figcaption> Jellyfish (i_start=5) </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/1.7.3_jellyfish_t780.png" style="width: 200px; height: auto;" />
+                <figcaption> Jellyfish (i_start=7) </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/1.7.3_jellyfish_t690.png" style="width: 200px; height: auto;" />
+                <figcaption> Jellyfish (i_start=10) </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/1.7.3_jellyfish_t390.png" style="width: 200px; height: auto;" />
+                <figcaption> Jellyfish (i_start=20) </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/pancake.png" style="width: 200px; height: auto;" />
+                <figcaption> Panscake (Original) </figcaption>
+            </figure>
+        </div>
+    </div>
+
+    <h4> 1.8 Visual Anagrams </h4>
+    <div>
+        <p>
+            To create visual anagrams where the image looks like one right side up and another upside down, I implemented the 
+            visual_anagrams function. I created a denoising for-loop that conditions the model on two different text prompts. 
+            At each time step, the model predicts the noise in the upright image and the noise in the upside down image. I 
+            flip the second noise estimate back and average the two estimates, and use the blended value to recover the predicted 
+            image. 
+        </p>
+        <p>
+            I generated 3 visual anagrams. One is of an upright image of “an oil painting of a man” when flipped becomes 
+            “an oil painting of people around a campfire”:
+        </p>
+        <div class="image-row" style="display: flex; justify-content: center; gap: 20px;">
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/1.8_anagram_man.png" style="width: 150px; height: auto;" />
+                <figcaption> Oil Painting of a Man </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/1.8_anagram_campfire.png" style="width: 150px; height: auto;" />
+                <figcaption> Campfire </figcaption>
+            </figure>
+        </div>
+        <p>
+            Another is an upright “a picture of a colorful jellyfish” when flipped becomes 
+            “a fancy chandelier hanging from the ceiling”:
+        </p>
+        <div class="image-row" style="display: flex; justify-content: center; gap: 20px;">
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/1.8_anagram_jellyfish.png" style="width: 150px; height: auto;" />
+                <figcaption> Jellyfish </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/1.8_anagram_chandelier.png" style="width: 150px; height: auto;" />
+                <figcaption> Chandelier </figcaption>
+            </figure>
+        </div>
+        <p>
+            Lastly, an image upright of “a charcoal sketch of an old lighthouse battered by ocean winds” 
+            when flipped becomes “a stylized ink drawing of a woman beneath cherry blossoms”:
+        </p>
+        <div class="image-row" style="display: flex; justify-content: center; gap: 20px;">
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/1.8_anagram_lighthouse (1).png" style="width: 150px; height: auto;" />
+                <figcaption> Lighthouse </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/1.8_anagram_blossom (1).png" style="width: 150px; height: auto;" />
+                <figcaption> Women Cherry Blossom </figcaption>
+            </figure>
+        </div>
+    </div>
+
+    <h4> 1.9 Hybrid Images </h4>
+    <div>
+        <p>
+            I implemented the make_hybrids function that combines low-frequency and high-frequency outputs from two model outputs. 
+            At each denoising step, the model produces two CFG noise predictions on 2 different text prompts and I apply a high 
+            pass and low pass filter respectively and use techniques we learned from creating hybrid images to create a hybrid 
+            noise_estimate to guide the diffusion.
+        </p>
+        <p>
+            I generated 2 hybrid images. The first one I used the prompts “a lithograph of waterfalls” and “a rose garden with 
+            blue roses” to generate a hybrid of a lithograph of waterfalls at far and a rose garden of roses growing on a 
+            wall up close:
+        </p>
+        <div class="image-row" style="display: flex; justify-content: center; gap: 20px;">
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/1.9_hybrid_waterfall_rose.png" style="width: 50px; height: auto;" />
+                <figcaption> Waterfall (far) </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/1.9_hybrid_waterfall_rose.png" style="width: 200px; height: auto;" />
+                <figcaption> Rose Garden (close) </figcaption>
+            </figure>
+        </div>
+        <p>
+            The second hybrid image I used the prompts “a picture of a colorful jellyfish” and “a watercolor of a redwood forest 
+            with sunlight breaking through the canopy” to generate a jellyfish at far and the redwood forest up close:
+        </p>
+        <div class="image-row" style="display: flex; justify-content: center; gap: 20px;">
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/1.9_hybrid_forest_jellyfish.png" style="width: 50px; height: auto;" />
+                <figcaption> Jellyfish (far) </figcaption>
+            </figure>
+            <figure style="flex: 0 0 auto; text-align: center;">
+                <img src="./media/1.9_hybrid_forest_jellyfish.png" style="width: 200px; height: auto;" />
+                <figcaption> Forest (close) </figcaption>
+            </figure>
+        </div>
+    </div>
+</body>
+</html>
